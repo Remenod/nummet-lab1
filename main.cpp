@@ -97,7 +97,7 @@ double refine_roots(
     double fb = func(range.end);
 
     if (fa * fb > 0)
-        return NAN; // root exesting is not garateed
+        return (range.begin + range.end) / 2.0; // root exesting is not garateed
 
     while ((range.end - range.begin) > precision)
     {
