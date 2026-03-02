@@ -112,7 +112,8 @@ int main()
     const char *expr;
     std::string line;
     std::getline(std::cin, line);
-    expr = line.c_str();
+
+    expr = line.size() < 1 ? "sin(x) - 0.5*cos(x^2)" : line.c_str();
 
     double te_x = 0.5;
     te_variable vars[] = {{"x", &te_x, TE_VARIABLE, NULL}};
