@@ -120,18 +120,25 @@ int main()
 
     std::cout << "Enter an expression (e.g., sin(x) - 0.5*cos(x^2)):" << std::endl;
     const char *expr;
+
     std::string line;
     std::getline(std::cin, line);
-
     expr = line.size() < 1 ? "sin(x) - 0.5*cos(x^2)" : line.c_str();
 
     double te_x = 0.5;
     te_variable vars[] = {{"x", &te_x, TE_VARIABLE, NULL}};
-    te_expr *e = te_compile(expr, vars, 1, NULL);
+    int err;
+    te_expr *e = te_compile(expr, vars, 1, &err);
 
-    if (e == nullptr)
+    if (err)
     {
-        std::cout << "An error occured while parsing expression" << std::endl;
+        std::string spaces(err - 1, ' ');
+        std::cerr << "\033[31m"
+                  << "\nAn error occured while parsing expression\n"
+                  << line << "\n"
+                  << spaces << "^"
+                  << "\033[0m"
+                  << std::endl;
         return 1;
     }
 
