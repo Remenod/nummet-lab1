@@ -16,31 +16,13 @@ typedef struct
 std::vector<range_t> bracket_roots(
     std::function<double(double)> func,
     range_t range,
-    int separation_parts = 10)
+    int separation_parts = 10,
+    double precision = 0.01)
 {
     std::vector<range_t> result = {};
     double step = std::abs(range.end - range.begin) / separation_parts;
 
-    std::vector<range_t> ranges_with_root = {};
-
-    bool prev_sign = func(range.begin) > eps;
-
-    for (double i = range.begin; i < range.end; i += step)
-    {
-        int sign = func(i) > eps;
-
-        if (sign != prev_sign)
-        {
-            prev_sign = sign;
-            ranges_with_root.push_back(
-                {
-                    .begin = i - step,
-                    .end = i,
-                });
-        }
-    }
-
-    auto is_have_multiple_roots = [func](range_t range, int separation_parts = 5)
+    auto is_derivative_change_sign = [func](range_t range, int separation_parts = 5)
     {
         auto find_derivative = [func](double x, double dx = 0.005)
         {
@@ -52,24 +34,29 @@ std::vector<range_t> bracket_roots(
         bool prev_sign = find_derivative(range.begin) > 0;
         for (double i = range.begin; i < range.end; i += step)
         {
-            int sign = find_derivative(i) > eps;
-
+            bool sign = find_derivative(i) > 0;
             if (sign != prev_sign)
                 return true;
         }
         return false;
     };
 
-    for (auto el : ranges_with_root)
+    for (int i = 1; i <= separation_parts; i++)
     {
-        if (!is_have_multiple_roots(el))
+        range_t current_range =
+            {
+                .begin = range.begin + step * (i - 1),
+                .end = range.begin + step * i,
+            };
+
+        if (is_derivative_change_sign(current_range) && step > precision)
         {
-            result.push_back(el);
-        }
-        else
-        {
-            auto recursion_result = bracket_roots(func, el);
+            auto recursion_result = bracket_roots(func, current_range, separation_parts, precision);
             result.insert(result.end(), recursion_result.begin(), recursion_result.end());
+        }
+        else if (func(current_range.begin) * func(current_range.end) <= 0)
+        {
+            result.emplace_back(current_range);
         }
     }
 
@@ -108,6 +95,8 @@ double refine_roots(
 
 int main()
 {
+    const double precision = 0.01;
+
     std::cout << "Enter an expression (e.g., sin(x) - 0.5*cos(x^2)):" << std::endl;
     const char *expr;
     std::string line;
@@ -135,11 +124,14 @@ int main()
     range_t range = {};
     std::cin >> range.begin >> range.end;
 
-    std::vector<range_t> separated_roots = bracket_roots(func, range, 10);
+    std::vector<range_t> bracketed_roots = bracket_roots(func, range, 10, precision);
 
-    for (auto el : separated_roots)
-        std::cout << "(" << el.begin << ", " << el.end << ")  ->   " << refine_roots(func, el) << "\n";
-
+    std::cout << "Found " << bracketed_roots.size() << " roots\n";
+    for (auto el : bracketed_roots)
+    {
+        auto root = refine_roots(func, el, precision);
+        std::cout << "(" << el.begin << ", " << el.end << ")  ->   " << root << "\n";
+    }
     te_free(e);
     return 0;
 }
