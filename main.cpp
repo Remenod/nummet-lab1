@@ -85,7 +85,7 @@ double refine_roots(
     bool func_sign_on_range_end = func(range.end) > eps;
 
     if (func_sign_on_range_begin == func_sign_on_range_end)
-        return NAN;
+        return range.begin;
 
     while ((range.end - range.begin) > precision)
     {
