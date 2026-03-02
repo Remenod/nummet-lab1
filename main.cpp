@@ -86,26 +86,30 @@ double refine_roots(
     range_t range,
     double precision = 0.01)
 {
-    bool func_sign_on_range_begin = func(range.begin) > eps;
-    bool func_sign_on_range_end = func(range.end) > eps;
+    double fa = func(range.begin);
+    double fb = func(range.end);
 
-    if (func_sign_on_range_begin == func_sign_on_range_end)
-        return range.begin;
+    if (fa * fb > 0)
+        return NAN; // root exesting is not garateed
 
     while ((range.end - range.begin) > precision)
     {
-        double middle_point = range.begin + (range.end - range.begin) / 2.0;
-        double func_on_middle_point = func(middle_point);
+        double mid = (range.begin + range.end) / 2.0;
+        double fm = func(mid);
 
-        if (std::abs(func_on_middle_point) < eps)
-            return middle_point;
+        if (std::abs(fm) < eps)
+            return mid;
 
-        bool func_sign_on_middle = func_on_middle_point > eps;
-
-        if (func_sign_on_middle == func_sign_on_range_begin)
-            range.begin = middle_point;
+        if (fa * fm > 0)
+        {
+            range.begin = mid;
+            fa = fm;
+        }
         else
-            range.end = middle_point;
+        {
+            range.end = mid;
+            fb = fm;
+        }
     }
 
     return (range.begin + range.end) / 2.0;
