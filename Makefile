@@ -12,6 +12,9 @@ OBJS = $(C_SRC:.c=.o) $(CPP_SRC:.cpp=.o)
 
 all: $(TARGET)
 
+tinyexpr.o: tinyexpr.c
+	$(CC) $(CFLAGS) -Wno-array-bounds -c $< -o $@
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -26,3 +29,5 @@ clean:
 
 run: $(TARGET)
 	./$(TARGET)
+
+.PHONY: all clean run
