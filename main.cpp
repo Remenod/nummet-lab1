@@ -2,7 +2,6 @@
 #include <cmath>
 #include <vector>
 #include <functional>
-#include <tuple>
 #include "tinyexpr.h"
 
 constexpr double eps = 1e-12;
