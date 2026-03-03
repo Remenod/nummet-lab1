@@ -164,9 +164,12 @@ int parse_config(void)
 int main()
 {
     if (parse_config())
-        std::cerr << "config.conf not fount. Using default values\n";
+        std::cerr << "\033[33m"
+                  << "config.conf not fount. Using default values\n"
+                  << "\033[0m";
 
-    std::cout << "Enter an expression (e.g., sin(x) - 0.5*cos(x^2)):" << std::endl;
+    std::cout
+        << "Enter an expression (e.g. " << "\033[4m" << "sin(x) - 0.5*cos(x^2)" << "\033[24m" << "):" << std::endl;
     const char *expr;
 
     std::string line;
@@ -196,7 +199,7 @@ int main()
         return te_eval(e);
     };
 
-    std::cout << "Enter operating range" << std::endl;
+    std::cout << "Enter operating range:" << std::endl;
     range_t range = {};
     std::cin >> range.begin >> range.end;
 
@@ -204,13 +207,18 @@ int main()
         bracket_roots(func, range, _conf_bracketing_check_subranges, _conf_bracketing_precision);
 
     auto bracketed_roots_size = bracketed_roots.size();
-    std::cout << "Found " << bracketed_roots_size
+    std::cout << "\033[32m"
+              << "Found " << bracketed_roots_size
               << ((bracketed_roots_size == 1) ? " root" : " roots")
+              << "\033[0m"
               << "\n";
     for (auto el : bracketed_roots)
     {
         auto root = refine_roots(func, el, _conf_refining_precision);
-        std::cout << root << " on range (" << el.begin << ", " << el.end << ")\n";
+        std::cout << root
+                  << "\033[90m"
+                  << " on range (" << el.begin << ", " << el.end << ")\n"
+                  << "\033[0m";
     }
     te_free(e);
     return 0;
