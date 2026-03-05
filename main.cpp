@@ -6,6 +6,8 @@
 #include <string>
 #include "tinyexpr.h"
 
+#include <sstream>
+
 constexpr double eps = 1e-12;
 
 int _conf_derivative_check_subranges = 5;
@@ -19,81 +21,6 @@ typedef struct
     double begin;
     double end;
 } range_t;
-
-std::vector<range_t> bracket_roots(
-    std::function<double(double)> func,
-    range_t range,
-    int separation_parts,
-    double precision)
-{
-    std::vector<range_t> result = {};
-    const double step = std::abs(range.end - range.begin) / separation_parts;
-
-    auto is_derivative_change_sign = [func](range_t range, int separation_parts)
-    {
-        auto find_derivative = [func](double x, double dx)
-        {
-            return (func(x + dx) - func(x)) / dx;
-        };
-
-        const double step = std::abs(range.end - range.begin) / separation_parts;
-
-        const bool prev_sign = find_derivative(range.begin, _conf_derivative_precision) >= 0;
-        for (int i = 0; i <= separation_parts; i++)
-        {
-            double d = find_derivative(range.begin + i * step, _conf_derivative_precision);
-
-            if (std::abs(d) < eps)
-                return true;
-
-            bool sign = d >= 0;
-            if (sign != prev_sign)
-                return true;
-
-            if (std::abs(d) < eps ||
-                std::abs(find_derivative(range.begin + (i + 1) * step, _conf_derivative_precision)) < eps)
-                return true;
-        }
-        return false;
-    };
-
-    for (int i = 0; i < separation_parts; i++)
-    {
-        range_t current_range =
-            {
-                .begin = range.begin + step * i,
-                .end = range.begin + step * (i + 1),
-            };
-
-        if (is_derivative_change_sign(current_range, _conf_derivative_check_subranges) && step > precision)
-        {
-            auto recursion_result = bracket_roots(func, current_range, separation_parts, precision);
-            result.insert(result.end(), recursion_result.begin(), recursion_result.end());
-        }
-        else
-        {
-            const double fa = func(current_range.begin);
-            const double fb = func(current_range.end);
-
-            const bool b_is_zero = std::abs(fb) < eps;
-
-            const bool sign_change = fa * fb < 0;
-
-            auto is_duplicate_zero = [&](double x)
-            {
-                if (result.empty())
-                    return false;
-
-                return std::abs(result.back().end - x) < eps;
-            };
-
-            if (sign_change || (b_is_zero && !is_duplicate_zero(current_range.end)))
-                result.emplace_back(current_range);
-        }
-    }
-
-    return result;
-}
 
 double refine_roots(
     std::function<double(double)> func,
@@ -127,6 +54,73 @@ double refine_roots(
     }
 
     return (range.begin + range.end) / 2.0;
+}
+
+std::vector<range_t> bracket_roots(
+    std::function<double(double)> func,
+    range_t range,
+    int separation_parts,
+    double precision,
+    bool search_for_tangent_roots = false)
+{
+    auto find_derivative = [func](double x, double dx = _conf_derivative_precision)
+    {
+        return (func(x + dx) - func(x)) / dx;
+    };
+    std::vector<range_t> result = {};
+    const double step = std::abs(range.end - range.begin) / separation_parts;
+
+    auto is_derivative_change_sign = [func, find_derivative](range_t range, int separation_parts = _conf_derivative_check_subranges)
+    {
+        const double step = std::abs(range.end - range.begin) / separation_parts;
+
+        const bool prev_sign = find_derivative(range.begin) > 0;
+        for (int i = 0; i <= separation_parts; i++)
+        {
+            bool sign = find_derivative(range.begin + i * step) >= 0;
+            if (sign != prev_sign)
+                return true;
+        }
+        return false;
+    };
+
+    for (int i = 0; i < separation_parts; i++)
+    {
+        range_t current_range =
+            {
+                .begin = range.begin + step * i,
+                .end = range.begin + step * (i + 1),
+            };
+
+        if (is_derivative_change_sign(current_range) && step > precision)
+        {
+            auto recursion_result = bracket_roots(func, current_range, separation_parts, precision, true);
+            result.insert(result.end(), recursion_result.begin(), recursion_result.end());
+        }
+        else
+        {
+            const double fa = func(current_range.begin);
+            const double fb = func(current_range.end);
+
+            const bool sign_change = fa * fb < 0;
+
+            if (sign_change)
+            {
+                result.emplace_back(current_range);
+            }
+            else if (search_for_tangent_roots && !(step > precision))
+            {
+                for (auto root_range : bracket_roots(find_derivative, current_range, 10, _conf_bracketing_precision))
+                {
+                    auto dr = refine_roots(func, root_range, _conf_refining_precision);
+                    if (std::abs(func(dr)) < precision)
+                        result.emplace_back(range_t{dr, dr});
+                }
+            }
+        }
+    }
+
+    return result;
 }
 
 int parse_config(void)
@@ -204,7 +198,7 @@ int main()
     std::cin >> range.begin >> range.end;
 
     std::vector<range_t> bracketed_roots =
-        bracket_roots(func, range, _conf_bracketing_check_subranges, _conf_bracketing_precision);
+        bracket_roots(func, range, _conf_bracketing_check_subranges, _conf_bracketing_precision, true);
 
     auto bracketed_roots_size = bracketed_roots.size();
     std::cout << "\033[32m"
