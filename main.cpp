@@ -4,8 +4,7 @@
 #include <functional>
 #include <fstream>
 #include <string>
-#include <optional>
-
+#include <memory>
 #include "tinyexpr.h"
 
 constexpr double eps = 1e-12;
@@ -31,10 +30,9 @@ struct Range
     }
 };
 
-double refine_roots(std::function<double(double)> func, Range range, Config config)
+double refine_roots(std::function<double(double)> func, Range range, Config &config)
 {
     double fa = func(range.begin);
-    double fb = func(range.end);
 
     while ((range.end - range.begin) > config.refining_precision)
     {
@@ -52,7 +50,6 @@ double refine_roots(std::function<double(double)> func, Range range, Config conf
         else
         {
             range.end = mid;
-            fb = fm;
         }
     }
 
@@ -62,7 +59,7 @@ double refine_roots(std::function<double(double)> func, Range range, Config conf
 std::vector<Range> bracket_roots(
     std::function<double(double)> func,
     Range range,
-    Config config,
+    Config &config,
     bool search_for_tangent_roots = false)
 {
     auto func_derivative = [func, config](double x)
@@ -78,7 +75,7 @@ std::vector<Range> bracket_roots(
 
         for (int i = 0; i <= config.derivative_subranges_count; i++)
         {
-            bool sign = func_derivative(range.begin + i * step) >= eps;
+            bool sign = func_derivative(range.begin + i * step) > eps;
             if (sign != prev_sign)
                 return true;
         }
@@ -177,10 +174,11 @@ std::string get_expression(void)
 
 std::function<double(double)> get_func(const std::string &expr)
 {
-    double *te_x = new double(0);
-    te_variable vars[] = {{"x", te_x, TE_VARIABLE, NULL}};
+    auto te_x = std::make_shared<double>(0);
+
+    te_variable vars[] = {{"x", te_x.get(), TE_VARIABLE, nullptr}};
     int err;
-    te_expr *e = te_compile(expr.c_str(), vars, 1, &err);
+    te_expr *e_raw = te_compile(expr.c_str(), vars, 1, &err);
 
     if (err)
     {
@@ -191,14 +189,16 @@ std::function<double(double)> get_func(const std::string &expr)
                   << spaces << "^"
                   << "\033[0m"
                   << std::endl;
-        delete te_x;
         return {};
     }
+
+    auto e = std::shared_ptr<te_expr>(e_raw, [](te_expr *ptr)
+                                      { te_free(ptr); });
 
     return [e, te_x](double x) mutable
     {
         *te_x = x;
-        return te_eval(e);
+        return te_eval(e.get());
     };
 }
 
