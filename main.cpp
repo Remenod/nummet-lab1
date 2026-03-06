@@ -143,7 +143,7 @@ int parse_config(Config *config)
         value = key.substr(pos + 1);
         key = key.substr(0, pos);
 
-        if (key == "derivative_check_subranges")
+        if (key == "derivative_subranges_count")
             config->derivative_subranges_count = std::stoi(value);
         else if (key == "derivative_precision")
             config->derivative_precision = std::stod(value);
@@ -151,7 +151,7 @@ int parse_config(Config *config)
             config->refining_precision = std::stod(value);
         else if (key == "bracketing_precision")
             config->bracketing_precision = std::stod(value);
-        else if (key == "bracketing_check_subranges")
+        else if (key == "bracketing_subranges_count")
             config->bracketing_subranges_count = std::stoi(value);
     }
     return 0;
