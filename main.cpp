@@ -188,24 +188,15 @@ std::string get_expression(void)
     return line.size() < 1 ? "sin(x) - 0.5*cos(x^2)" : line;
 }
 
-std::function<double(double)> get_func(const std::string &expr)
+std::function<double(double)> get_func(const std::string &expr, int &err)
 {
     auto te_x = std::make_shared<double>(0);
 
     te_variable vars[] = {{"x", te_x.get(), TE_VARIABLE, nullptr}};
-    int err;
     te_expr *e_raw = te_compile(expr.c_str(), vars, 1, &err);
 
     if (err)
-    {
-        std::string spaces(err - 1, ' ');
-        std::cerr << "\033[31m"
-                  << "\nAn error occured while parsing expression\n"
-                  << expr << "\n"
-                  << spaces << "^"
-                  << "\033[0m\n";
         return {};
-    }
 
     auto e = std::shared_ptr<te_expr>(e_raw, [](te_expr *ptr)
                                       { te_free(ptr); });
@@ -254,9 +245,20 @@ int main()
         break;
     }
 
-    auto func = get_func(get_expression());
+    auto expr = get_expression();
+
+    int err;
+    auto func = get_func(expr, err);
+
     if (!func)
-        return 1;
+    {
+        std::string spaces(err - 1, ' ');
+        std::cerr << "\033[31m"
+                  << "\nAn error occured while parsing expression\n"
+                  << expr << "\n"
+                  << spaces << "^"
+                  << "\033[0m\n";
+    }
 
     auto range = get_range();
 
