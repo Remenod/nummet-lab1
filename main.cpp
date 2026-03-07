@@ -203,8 +203,7 @@ std::function<double(double)> get_func(const std::string &expr)
                   << "\nAn error occured while parsing expression\n"
                   << expr << "\n"
                   << spaces << "^"
-                  << "\033[0m"
-                  << std::endl;
+                  << "\033[0m\n";
         return {};
     }
 
@@ -220,7 +219,7 @@ std::function<double(double)> get_func(const std::string &expr)
 
 Range get_range(void)
 {
-    std::cout << "Enter operating range:" << std::endl;
+    std::cout << "Enter operating range:" << "\n";
     Range range;
     std::cin >> range.begin >> range.end;
     return range;
