@@ -6,6 +6,8 @@
 #include <memory>
 #include "tinyexpr.h"
 
+typedef std::function<double(double)> mathfunc;
+
 constexpr double eps = 1e-12;
 
 struct Config
@@ -29,7 +31,7 @@ struct Range
     }
 };
 
-double refine_root(std::function<double(double)> func, Range range, Config &config)
+double refine_root(mathfunc func, Range range, Config &config)
 {
     double fa = func(range.begin);
 
@@ -52,13 +54,9 @@ double refine_root(std::function<double(double)> func, Range range, Config &conf
     return (range.begin + range.end) / 2.0;
 }
 
-std::vector<Range> bracket_roots(
-    std::function<double(double)> func,
-    Range range,
-    Config &config,
-    bool search_for_tangent_roots = false)
+std::vector<Range> bracket_roots(mathfunc func, Range range, Config &config)
 {
-    auto find_derivative_value = [](std::function<double(double)> func, double x, double dx)
+    auto find_derivative_value = [](mathfunc func, double x, double dx)
     {
         return (func(x + dx) - func(x)) / dx;
     };
@@ -94,7 +92,7 @@ std::vector<Range> bracket_roots(
 
         if (is_derivative_change_sign(current_range) && (step > config.bracketing_precision))
         {
-            auto recursion_result = bracket_roots(func, current_range, config, search_for_tangent_roots);
+            auto recursion_result = bracket_roots(func, current_range, config);
             result.insert(result.end(), recursion_result.begin(), recursion_result.end());
         }
         else
@@ -105,7 +103,7 @@ std::vector<Range> bracket_roots(
             {
                 result.emplace_back(current_range);
             }
-            else if (search_for_tangent_roots && is_derivative_change_sign(current_range))
+            else if (is_derivative_change_sign(current_range))
             {
                 auto ranges_with_root = bracket_roots(func_derivative, current_range, config);
 
@@ -187,7 +185,7 @@ static std::string get_expression(void)
     return line.size() < 1 ? "sin(x) - 0.5*cos(x^2)" : line;
 }
 
-static std::function<double(double)> get_func(const std::string &expr, int &err)
+static mathfunc get_func(const std::string &expr, int &err)
 {
     auto te_x = std::make_shared<double>(0);
 
@@ -281,7 +279,7 @@ int main()
 
     auto range = get_range();
 
-    auto bracketed_roots = bracket_roots(func, range, config, true);
+    auto bracketed_roots = bracket_roots(func, range, config);
 
     print_roots_found(bracketed_roots.size());
 
