@@ -118,7 +118,8 @@ std::vector<Range> bracket_roots(mathfunc func, Range range, Config &config)
 
                         double C = std::abs(second) * 0.5 + eps;
 
-                        return std::abs(func(x)) < C * (config.refining_precision / 2) * (config.refining_precision / 2);
+                        return std::abs(func(x)) <
+                               C * (config.refining_precision / 2) * (config.refining_precision / 2);
                     };
 
                     if (is_root(derivative_root))
