@@ -4,7 +4,7 @@
 #include <fstream>
 #include <string>
 #include <memory>
-#include "tinyexpr.h"
+#include "lib/tinyexpr.h"
 
 typedef std::function<double(double)> mathfunc;
 
