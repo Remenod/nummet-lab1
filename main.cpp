@@ -91,12 +91,13 @@ std::vector<Range> bracket_roots(mathfunc func, Range range, Config &config, boo
         };
 
         const bool derivative_change_sign = is_derivative_change_sign(current_range);
+        const bool func_change_sign = func(current_range.begin) * func(current_range.end) < 0;
 
         if (derivative_change_sign)
         {
             if (step > config.bracketing_precision)
             {
-                auto recursion_result = bracket_roots(func, current_range, config, true);
+                auto recursion_result = bracket_roots(func, current_range, config, search_for_tangent);
                 result.insert(result.end(), recursion_result.begin(), recursion_result.end());
             }
             else if (search_for_tangent)
@@ -123,7 +124,7 @@ std::vector<Range> bracket_roots(mathfunc func, Range range, Config &config, boo
                 }
             }
         }
-        else if (func(current_range.begin) * func(current_range.end) < 0)
+        else if (func_change_sign)
         {
             result.emplace_back(current_range);
         }
@@ -280,7 +281,7 @@ int main()
 
     auto range = get_range();
 
-    auto bracketed_roots = bracket_roots(func, range, config, false);
+    auto bracketed_roots = bracket_roots(func, range, config);
 
     print_roots_found(bracketed_roots.size());
 
