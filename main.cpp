@@ -92,20 +92,14 @@ std::vector<Range> bracket_roots(mathfunc func, Range range, Config &config, boo
 
         const bool derivative_change_sign = is_derivative_change_sign(current_range);
 
-        if (derivative_change_sign && (step > config.bracketing_precision))
+        if (derivative_change_sign)
         {
-            auto recursion_result = bracket_roots(func, current_range, config, true);
-            result.insert(result.end(), recursion_result.begin(), recursion_result.end());
-        }
-        else
-        {
-            const bool sign_change = func(current_range.begin) * func(current_range.end) < 0;
-
-            if (sign_change)
+            if (step > config.bracketing_precision)
             {
-                result.emplace_back(current_range);
+                auto recursion_result = bracket_roots(func, current_range, config, true);
+                result.insert(result.end(), recursion_result.begin(), recursion_result.end());
             }
-            else if (derivative_change_sign && search_for_tangent)
+            else if (search_for_tangent)
             {
                 auto ranges_with_extremum = bracket_roots(func_derivative, current_range, config, false);
 
@@ -115,19 +109,23 @@ std::vector<Range> bracket_roots(mathfunc func, Range range, Config &config, boo
 
                     auto is_root = [func, func_derivative, find_derivative_value, config](double x)
                     {
-                        double second =
-                            find_derivative_value(func_derivative, x, config.derivative_precision);
+                        double second = find_derivative_value(func_derivative, x, config.derivative_precision);
 
                         double C = std::abs(second) * 0.5 + eps;
 
-                        return std::abs(func(x)) <
-                               C * (config.refining_precision / 2) * (config.refining_precision / 2);
+                        double delta = config.refining_precision / 2;
+
+                        return std::abs(func(x)) < C * delta * delta;
                     };
 
                     if (is_root(derivative_root))
                         result.emplace_back(Range{derivative_root, derivative_root});
                 }
             }
+        }
+        else if (func(current_range.begin) * func(current_range.end) < 0)
+        {
+            result.emplace_back(current_range);
         }
     }
 
