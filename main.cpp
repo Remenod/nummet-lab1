@@ -249,7 +249,7 @@ static void print_expression_error(const std::string &expr, int err)
 {
     std::string spaces(err - 1, ' ');
     std::cerr << "\033[31m"
-              << "\nAn error occured while parsing expression\n"
+              << "\nAn error occurred while parsing expression\n"
               << expr << "\n"
               << spaces << "^"
               << "\033[0m\n";
